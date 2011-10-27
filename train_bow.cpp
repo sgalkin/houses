@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  BowTrainer bow(1000);
+  BowTrainer bow(5000);
   for(char** arg = argv + 2; arg != argv + argc; arg += 2) {
     bow(*arg, *(arg + 1));
   }

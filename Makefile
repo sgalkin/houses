@@ -1,4 +1,4 @@
-TARGETS = collect_sift train_bow
+TARGETS = collect_sift train_bow train_svm predict
 
 TEST_SOURCES = \
 	tests/test_utils.cpp \
@@ -28,6 +28,13 @@ train_bow_SRCS = \
 	utils.cpp \
 	train_bow.cpp \
 
+train_svm_SRCS = \
+	utils.cpp \
+	train_svm.cpp \
+
+predict_SRCS = \
+	predict.cpp \
+
 # define PROGRAM_template = 
 # $(1): $$($(1)_SRCS:.cpp=.o}
 # 	$${LINK.cpp} $$^ -o $$@
@@ -35,10 +42,18 @@ train_bow_SRCS = \
 
 # $(foreach target, ${TARGETS}, $(eval $(call $(PROGRAM_template, $(target)))))
 
+all: Makefile ${TARGETS}
+
 collect_sift: ${collect_sift_SRCS:.cpp=.o}
 	${LINK.cpp} $^ -o $@
 
 train_bow: ${train_bow_SRCS:.cpp=.o}
+	${LINK.cpp} $^ -o $@
+
+train_svm: ${train_svm_SRCS:.cpp=.o}
+	${LINK.cpp} $^ -o $@
+
+predict: ${predict_SRCS:.cpp=.o}
 	${LINK.cpp} $^ -o $@
 
 check: LDFLAGS += -lboost_unit_test_framework -I/opt/local/include
