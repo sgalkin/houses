@@ -10,7 +10,8 @@ namespace fs = boost::filesystem;
 
 class SiftProcessor {
 public:
-    explicit SiftProcessor(const std::string& out) : file_(out, cv::FileStorage::WRITE) {}
+    explicit SiftProcessor(const std::string& out) : 
+      file_(out, cv::FileStorage::WRITE) {}
 
     void operator()(const fs::path& path) {
         std::vector<cv::KeyPoint> keys;

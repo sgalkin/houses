@@ -13,7 +13,7 @@ namespace fs = boost::filesystem;
 
 class SVMTrainer {
 public:
-  SVMTrainer(const std::string& bow) : 
+  explicit SVMTrainer(const std::string& bow) : 
     isPositive_(true),
     descriptor_(cv::Ptr<cv::DescriptorExtractor>(new cv::SiftDescriptorExtractor()),
 		cv::Ptr<cv::DescriptorMatcher>(new cv::BruteForceMatcher<cv::L2<float> >())),

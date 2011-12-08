@@ -12,7 +12,8 @@ namespace fs = boost::filesystem;
 
 class BowTrainer {
 public:
-  BowTrainer(size_t clusters) : bow_(clusters) {}
+  explicit BowTrainer(size_t clusters) : 
+    bow_(clusters) {}
 
   void operator()(const std::string& path, const std::string& sift) {
     std::cerr << "Reading " << sift << std::endl;
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  BowTrainer bow(5000);
+  BowTrainer bow(500);
   for(char** arg = argv + 2; arg != argv + argc; arg += 2) {
     bow(*arg, *(arg + 1));
   }
