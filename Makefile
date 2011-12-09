@@ -61,4 +61,4 @@ check: $(TEST_SOURCES:.cpp=)
 	@for test in $(TEST_SOURCES:.cpp=); do ./$$test; done
 
 clean:
-	${RM} *.o ${TARGETS} ${TEST_SOURCES:.cpp=}
+	${RM} *.o ${TARGETS} ${TEST_SOURCES:.cpp=} ${TEST_SOURCES:.cpp=.o}
