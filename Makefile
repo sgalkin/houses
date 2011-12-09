@@ -2,9 +2,14 @@ TARGETS = collect_sift train_bow train_svm predict
 
 TEST_SOURCES = \
 	tests/test_utils.cpp \
+	tests/test_tar.cpp \
 
-CXXFLAGS = -Wall -O3 -g -I/Users/stranger/Works/local/include -I/opt/local/include -pipe
-LDFLAGS = -L/Users/stranger/Works/local/lib \
+OPENCV_ROOT=/home/stranger/stuff/opencv/usr/local
+
+CXX = gcc-4.6
+CXXFLAGS = -Wall -O2 -g -I${OPENCV_ROOT}/include -I/opt/local/include -pipe -std=c++0x
+LDFLAGS = \
+	-L${OPENCV_ROOT}/lib \
 	-L/opt/local/lib \
 	-lopencv_features2d \
 	-lopencv_core \
@@ -15,14 +20,15 @@ LDFLAGS = -L/Users/stranger/Works/local/lib \
 	-lboost_filesystem \
 	-lboost_system \
 
-LD_LIBRARY_PATH=/Users/stranger/Works/local/lib
+LD_LIBRARY_PATH=${OPENCV_ROOT}/lib
 export LD_LIBRARY_PATH
-
-all: ${TARGETS}
 
 collect_sift_SRCS = \
 	utils.cpp \
 	collect_sift.cpp \
+
+collect_sift_LDFLAGS = \
+	-ltar \
 
 train_bow_SRCS = \
 	utils.cpp \
@@ -35,32 +41,24 @@ train_svm_SRCS = \
 predict_SRCS = \
 	predict.cpp \
 
-# define PROGRAM_template = 
-# $(1): $$($(1)_SRCS:.cpp=.o}
-# 	$${LINK.cpp} $$^ -o $$@
-# endef
+define PROGRAM_template
+$(1): $$($(1)_SRCS:.cpp=.o)
+	$${LINK.cpp} $$($(1)_LDFLAGS) $$^ -o $$@
+endef
 
-# $(foreach target, ${TARGETS}, $(eval $(call $(PROGRAM_template, $(target)))))
+define TEST_template
+$(1:.cpp=): $(1) $$(patsubst tests/test_%,%,$(1))
+	$${LINK.cpp} $$^ -o $$@
+endef
 
-all: Makefile ${TARGETS}
+$(foreach target, ${TARGETS}, $(eval $(call PROGRAM_template,$(target))))
+$(foreach test, $(TEST_SOURCES), $(eval $(call TEST_template,$(test))))
 
-collect_sift: ${collect_sift_SRCS:.cpp=.o}
-	${LINK.cpp} $^ -o $@
+all: Makefile check ${TARGETS}
 
-train_bow: ${train_bow_SRCS:.cpp=.o}
-	${LINK.cpp} $^ -o $@
-
-train_svm: ${train_svm_SRCS:.cpp=.o}
-	${LINK.cpp} $^ -o $@
-
-predict: ${predict_SRCS:.cpp=.o}
-	${LINK.cpp} $^ -o $@
-
-check: LDFLAGS += -lboost_unit_test_framework -I/opt/local/include
-check: ${TEST_SOURCES:.cpp=}
-	$(foreach target, ${TEST_SOURCES:.cpp=}, ./${target})
-
-${TEST_SOURCES:.cpp=}: ${TEST_SOURCES:.cpp=.o} ${patsubst test_%,%,${TEST_SOURCES}}
+check: LDFLAGS += -lboost_unit_test_framework -ltar #-I/opt/local/include
+check: $(TEST_SOURCES:.cpp=)
+	@for test in $(TEST_SOURCES:.cpp=); do ./$$test; done
 
 clean:
 	${RM} *.o ${TARGETS} ${TEST_SOURCES:.cpp=}
