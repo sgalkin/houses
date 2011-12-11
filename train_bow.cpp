@@ -1,5 +1,5 @@
 #include "utils.h"
-
+#include "image.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -10,16 +10,27 @@
 
 namespace fs = boost::filesystem;
 
+template<typename Extractor> struct ImageType;
+template<> struct ImageType<cv::SIFT> { enum { type = CV_RGB2GRAY }; };
+template<> struct ImageType<cv::SURF> { enum { type = CV_RGB2GRAY }; };
+template<> struct ImageType<cv::OpponentColorDescriptorExtractor> { enum { type = CV_RGB2BGR }; };
+
+template<typename Extractor>
 class BowTrainer {
 public:
-  explicit BowTrainer(size_t clusters) : 
-    bow_(clusters) {}
+  explicit BowTrainer(size_t clusters, const Extractor& extractor = Extractor()) :
+    bow_(clusters),
+    extractor_(extractor) {}
 
-  void operator()(const std::string& path, const std::string& sift) {
-    std::cerr << "Reading " << sift << std::endl;
-    cv::FileStorage sifts(sift, cv::FileStorage::READ);
-    const cv::FileNode& root = sifts.root();
-    std::for_each(root.begin(), root.end(), boost::bind(&BowTrainer::read, this, boost::cref(path), _1));
+  void operator()(const std::string& path, const std::string& features) {
+    try {
+      std::cerr << "Reading " << features << std::endl;
+      cv::FileStorage keys(features, cv::FileStorage::READ);
+      const cv::FileNode& root = keys.root();
+      std::for_each(root.begin(), root.end(), boost::bind(&BowTrainer::read, this, boost::cref(path), _1));
+    } catch (cv::Exception& ex) {
+      std::cerr << "Error while processing " << path << " " << ex.what() << std::endl;
+    }
   }
 
   void train(const std::string& path) {
@@ -32,16 +43,19 @@ public:
 
 private:
   void read(const std::string& path, const cv::FileNode& node) {
-    std::vector<cv::KeyPoint> keys;
-    cv::read(node, keys);
-    cv::Mat img = cv::imread((fs::path(path) / id2path(node.name())).string() + ".jpg", 0);
-    cv::Mat descriptor;
-    sift_(img, cv::Mat(), keys, descriptor, true);
-    bow_.add(descriptor);    
+    try {
+      std::vector<cv::KeyPoint> keys;
+      cv::read(node, keys);
+      cv::Mat descriptor;
+      extractor_.compute(image((fs::path(path) / id2path(node.name())).string() + ".jpg", ImageType<Extractor>::type), keys, descriptor);
+      bow_.add(descriptor);
+    } catch(cv::Exception& ex) {
+      std::cerr << "Error while processing " << path << " " << ex.what() << std::endl;
+    }
   }
 
-  cv::SIFT sift_;
   cv::BOWKMeansTrainer bow_;
+  Extractor extractor_;
 };
 
 int main(int argc, char* argv[]) {
@@ -51,7 +65,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
-  BowTrainer bow(500);
+  BowTrainer<cv::OpponentColorDescriptorExtractor> bow(1000, cv::OpponentColorDescriptorExtractor(new cv::SurfDescriptorExtractor));
   for(char** arg = argv + 2; arg != argv + argc; arg += 2) {
     bow(*arg, *(arg + 1));
   }

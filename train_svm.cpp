@@ -35,22 +35,30 @@ public:
   }
 
   void train(const std::string& filename) {
-    std::cerr << "Training SVM" << std::endl;
-    svm_.train(*train_, response_);
-    std::cerr << "Saving" << std::endl;
-    cv::FileStorage svm(filename, cv::FileStorage::WRITE);
-    svm_.write(*svm, "svm");
+    try {
+      std::cerr << "Training SVM" << std::endl;
+      svm_.train(*train_, response_);
+      std::cerr << "Saving" << std::endl;
+      cv::FileStorage svm(filename, cv::FileStorage::WRITE);
+      svm_.write(*svm, "svm");
+    } catch(cv::Exception& ex) {
+      std::cerr << "Error while training svm " << ex.what() << std::endl;
+    }
   }
 
 private:
   void read(const std::string& path, const cv::FileNode& node) {
-    std::vector<cv::KeyPoint> keys;
-    cv::read(node, keys);
-    cv::Mat img = cv::imread((fs::path(path) / id2path(node.name())).string() + ".jpg", 0);
-    cv::Mat descriptor;
-    descriptor_.compute(img, keys, descriptor);
-    train_->push_back(descriptor);
-    response_.push_back(isPositive_ ? 1 : -1);
+    try {
+      std::vector<cv::KeyPoint> keys;
+      cv::read(node, keys);
+      cv::Mat img = cv::imread((fs::path(path) / id2path(node.name())).string() + ".jpg", 0);
+      cv::Mat descriptor;
+      descriptor_.compute(img, keys, descriptor);
+      train_->push_back(descriptor);
+      response_.push_back(isPositive_ ? 1 : -1);
+    } catch(cv::Exception& ex) {
+      std::cerr << "Error while porcessing " << path << " " << ex.what() << std::endl;
+    }
   }
 
   bool isPositive_;
